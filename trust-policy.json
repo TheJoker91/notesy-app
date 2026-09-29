@@ -10,7 +10,7 @@
       "Condition": {
         "StringEquals": {
           "token.actions.githubusercontent.com:aud": "sts.amazonaws.com",
-          "token.actions.githubusercontent.com:sub": "repo:TheJoker91/https-github.com-guilene1-notesy-app:ref:refs/heads/main"
+          "token.actions.githubusercontent.com:sub": "repo:TheJoker91@117049941/https-github.com-guilene1-notesy-app@1384331938:ref:refs/heads/main"
         }
       }
     }
