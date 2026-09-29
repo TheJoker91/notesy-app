@@ -224,3 +224,37 @@ jobs:
           IMAGE=${{ steps.ecr-login.outputs.registry }}/${{ env.ECR_REPOSITORY }}
           docker push $IMAGE:${{ github.sha }}
           docker push $IMAGE:latest
+
+      - name: Save image as tarball
+        run: |
+          IMAGE=${{ steps.ecr-login.outputs.registry }}/${{ env.ECR_REPOSITORY }}
+          docker save $IMAGE:${{ github.sha }} | gzip > notesy-${{ github.sha }}.tar.gz
+          ls -lh notesy-${{ github.sha }}.tar.gz
+
+      - name: Hand off image tarball
+        uses: actions/upload-artifact@v4
+        with:
+          name: image-tarball
+          path: notesy-${{ github.sha }}.tar.gz
+          retention-days: 1
+          if-no-files-found: error
+
+  publish-jfrog:
+    name: Publish to JFrog
+    needs: publish-ecr
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download image tarball
+        uses: actions/download-artifact@v4
+        with:
+          name: image-tarball
+
+      - name: Upload image tarball to JFrog
+        env:
+          JFROG_TOKEN: ${{ secrets.JFROG_ACCESS_TOKEN }}
+        run: |
+          FILE=notesy-${{ github.sha }}.tar.gz
+          BASE=${{ env.JFROG_URL }}/artifactory/${{ env.JFROG_REPO }}/notesy
+          curl --fail -sS -H "Authorization: Bearer $JFROG_TOKEN" -T $FILE "$BASE/${{ github.sha }}/$FILE"
+          curl --fail -sS -H "Authorization: Bearer $JFROG_TOKEN" -T $FILE "$BASE/latest/notesy-latest.tar.gz"
