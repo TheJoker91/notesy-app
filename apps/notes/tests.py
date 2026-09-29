@@ -1,3 +1,7 @@
+
+
+def test_ci_gate_should_fail():
+    assert False, "Deliberate failure to prove CI blocks on failing tests"
 import pytest
 from django.contrib.auth import get_user_model
 from django.test import Client
