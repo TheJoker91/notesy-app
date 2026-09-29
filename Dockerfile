@@ -1,7 +1,7 @@
 # ---- Stage 1: build the TypeScript bundle ----
 FROM node:20-alpine AS frontend
 WORKDIR /build
-COPY package.json ./
+COPY package*.json ./
 RUN npm install
 COPY tsconfig.json ./
 COPY apps/notes/static_src ./apps/notes/static_src
@@ -21,10 +21,14 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY --chown=app:app . .
 COPY --from=frontend --chown=app:app /build/static/js ./static/js
 
-# Collect static files into STATIC_ROOT for WhiteNoise
+# Collect static files for WhiteNoise; make the entrypoint executable
 RUN DJANGO_SECRET_KEY=build-only python manage.py collectstatic --noinput \
+    && chmod +x entrypoint.sh \
     && chown -R app:app /app
 
 USER app
 EXPOSE 8000
+
+# Entrypoint runs migrations, then hands off to CMD
+ENTRYPOINT ["./entrypoint.sh"]
 CMD ["gunicorn", "notesy.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "3"]

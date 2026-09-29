@@ -1,0 +1,14 @@
+cat > .dockerignore << 'EOF'
+.env
+.env.*
+.git
+.github
+node_modules
+static/js
+staticfiles
+db.sqlite3
+__pycache__
+*.pyc
+.pytest_cache
+coverage.xml
+EOF

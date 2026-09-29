@@ -1,0 +1,45 @@
+# Notesy local stack: Django app + Postgres
+# Usage: docker compose up --build   ->  http://localhost:8000  (demo / demo)
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-notesy}
+      POSTGRES_USER: ${POSTGRES_USER:-notesy}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-notesy_dev_pw}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    # Uncomment to reach Postgres from the host (psql, DBeaver, etc.)
+    # ports:
+    #   - "5432:5432"
+
+  web:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy   # wait until Postgres accepts connections
+    environment:
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:-local-dev-only-change-me}
+      DJANGO_DEBUG: ${DJANGO_DEBUG:-True}
+      DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:-localhost,127.0.0.1}
+      # Built from the POSTGRES_* values on purpose: "db" is the service name
+      # on the compose network. Don't read DATABASE_URL from .env here — the
+      # repo's .env points at localhost, which is the web container itself.
+      DATABASE_URL: postgres://${POSTGRES_USER:-notesy}:${POSTGRES_PASSWORD:-notesy_dev_pw}@db:5432/${POSTGRES_DB:-notesy}
+    # Migrations run in the image's entrypoint; seeding the demo user is local-only.
+    command: >
+      sh -c "python manage.py seed &&
+             gunicorn notesy.wsgi:application --bind 0.0.0.0:8000 --workers 3 --access-logfile -"
+    ports:
+      - "8000:8000"
+
+volumes:
+  pgdata:
