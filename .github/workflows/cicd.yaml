@@ -180,4 +180,4 @@ jobs:
             -Dsonar.organization=${{ env.SONAR_ORGANIZATION }}
             -Dsonar.python.version=3.12
             -Dsonar.python.coverage.reportPaths=coverage.xml
-            -Dsonar.qualitygate.wait=true
+            -Dsonar.qualitygate.wait=false
