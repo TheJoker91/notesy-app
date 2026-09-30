@@ -37,14 +37,14 @@ resource "aws_ecs_task_definition" "app" {
   }
 
   container_definitions = jsonencode([{
-    # Must match CONTAINER_NAME in .github/workflows/cicd.yaml
+    # Must match CONTAINER_NAME in .github/workflows/ci.yml
     name      = var.project
     image     = "${aws_ecr_repository.app.repository_url}:${var.image_tag}"
     essential = true
     # The image's entrypoint.sh runs migrations first; then (seed) and serve.
     command = ["sh", "-c", join(" && ", compact([
       var.run_seed ? "python manage.py seed" : "",
-      "exec gunicorn notesy.wsgi:application --bind 0.0.0.0:${var.container_port} --workers 3 --access-logfile -",
+      "exec gunicorn notesy.wsgi:application --bind 0.0.0.0:${var.container_port} --workers 3 --worker-class gthread --threads 4 --access-logfile -",
     ]))]
 
     portMappings = [{
@@ -54,7 +54,7 @@ resource "aws_ecs_task_definition" "app" {
 
     environment = [
       { name = "DJANGO_DEBUG", value = "False" },
-      { name = "DJANGO_ALLOWED_HOSTS", value = var.django_allowed_hosts },
+      { name = "DJANGO_ALLOWED_HOSTS", value = aws_lb.main.dns_name },
       { name = "DJANGO_CSRF_TRUSTED_ORIGINS", value = "http://${aws_lb.main.dns_name}" },
     ]
 

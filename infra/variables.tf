@@ -50,16 +50,10 @@ variable "desired_count" {
   default     = 0
 }
 
-variable "django_allowed_hosts" {
-  description = "Value for DJANGO_ALLOWED_HOSTS. ALB health checks send the task's private IP as the Host header, so restrict this only if you also handle that."
-  type        = string
-  default     = "*"
-}
-
 variable "run_seed" {
-  description = "Run `manage.py seed` (creates the demo/demo user) on container start."
+  description = "Run `manage.py seed` (creates the demo/demo user) on container start. For demo sessions only (enable with -var run_seed=true)."
   type        = bool
-  default     = true
+  default     = false
 }
 
 variable "log_retention_days" {
