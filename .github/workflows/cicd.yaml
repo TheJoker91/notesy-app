@@ -263,3 +263,50 @@ jobs:
           BASE=${{ env.JFROG_URL }}/artifactory/${{ env.JFROG_REPO }}/notesy
           curl --fail -sS -H "Authorization: Bearer $JFROG_TOKEN" -T $FILE "$BASE/${{ github.sha }}/$FILE"
           curl --fail -sS -H "Authorization: Bearer $JFROG_TOKEN" -T $FILE "$BASE/latest/notesy-latest.tar.gz"
+
+  deploy-ecs:
+    name: Deploy to ECS
+    needs: [publish-ecr, publish-jfrog]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ECR_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Register task definition with this commit's image
+        id: taskdef
+        run: |
+          REGISTRY=$(aws sts get-caller-identity --query Account --output text).dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com
+          IMAGE=$REGISTRY/${{ env.ECR_REPOSITORY }}:${{ github.sha }}
+          echo "Deploying image: $IMAGE"
+
+          # Start from the current task definition, swap only the image
+          aws ecs describe-task-definition --task-definition ${{ env.APP_NAME }} --query taskDefinition > current.json
+          jq --arg IMAGE "$IMAGE" --arg NAME "${{ env.CONTAINER_NAME }}" '
+            .containerDefinitions |= map(if .name == $NAME then .image = $IMAGE else . end)
+            | del(.taskDefinitionArn, .revision, .status, .requiresAttributes,
+                  .compatibilities, .registeredAt, .registeredBy)
+          ' current.json > new.json
+
+          ARN=$(aws ecs register-task-definition --cli-input-json file://new.json \
+                --query taskDefinition.taskDefinitionArn --output text)
+          echo "Registered: $ARN"
+          echo "arn=$ARN" >> "$GITHUB_OUTPUT"
+
+      - name: Deploy to ECS and wait for it to be healthy
+        run: |
+          aws ecs update-service \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --service ${{ env.ECS_SERVICE }} \
+            --task-definition ${{ steps.taskdef.outputs.arn }} \
+            --desired-count 1 > /dev/null
+          aws ecs wait services-stable \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --service ${{ env.ECS_SERVICE }}
+          echo "Service is stable on ${{ github.sha }}"
