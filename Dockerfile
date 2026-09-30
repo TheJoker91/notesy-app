@@ -21,8 +21,10 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY --chown=app:app . .
 COPY --from=frontend --chown=app:app /build/static/js ./static/js
 
-# Collect static files for WhiteNoise; make the entrypoint executable
-RUN DJANGO_SECRET_KEY=build-only python manage.py collectstatic --noinput \
+# Collect static files for WhiteNoise; make the entrypoint executable.
+# The secret key and database URL are throwaway values for this one command only:
+# collectstatic never touches the database, and neither value is kept in the image's env.
+RUN DJANGO_SECRET_KEY=build-only DATABASE_URL=sqlite:////tmp/build.sqlite3 python manage.py collectstatic --noinput \
     && chmod +x entrypoint.sh \
     && chown -R app:app /app
 
@@ -31,4 +33,4 @@ EXPOSE 8000
 
 # Entrypoint runs migrations, then hands off to CMD
 ENTRYPOINT ["./entrypoint.sh"]
-CMD ["gunicorn", "notesy.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "3"]
+CMD ["gunicorn", "notesy.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "3", "--worker-class", "gthread", "--threads", "4", "--access-logfile", "-"]

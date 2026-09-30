@@ -2,37 +2,45 @@
 # (RDS). Tasks get public IPs so they can pull from ECR without a NAT gateway;
 # their security group only accepts traffic from the ALB.
 
+data "aws_availability_zones" "available" {
+  state = "available"
+}
+
+locals {
+  azs = slice(data.aws_availability_zones.available.names, 0, 2)
+}
+
 resource "aws_vpc" "main" {
   cidr_block           = var.vpc_cidr
   enable_dns_support   = true
   enable_dns_hostnames = true
 
-  tags = { Name = "${var.app_name}-vpc" }
+  tags = { Name = "${var.project}-vpc" }
 }
 
 resource "aws_internet_gateway" "main" {
   vpc_id = aws_vpc.main.id
 
-  tags = { Name = "${var.app_name}-igw" }
+  tags = { Name = "${var.project}-igw" }
 }
 
 resource "aws_subnet" "public" {
-  count                   = 2
+  count                   = length(local.azs)
   vpc_id                  = aws_vpc.main.id
   cidr_block              = cidrsubnet(var.vpc_cidr, 8, count.index)
-  availability_zone       = data.aws_availability_zones.available.names[count.index]
+  availability_zone       = local.azs[count.index]
   map_public_ip_on_launch = true
 
-  tags = { Name = "${var.app_name}-public-${data.aws_availability_zones.available.names[count.index]}" }
+  tags = { Name = "${var.project}-public-${local.azs[count.index]}" }
 }
 
 resource "aws_subnet" "private" {
-  count             = 2
+  count             = length(local.azs)
   vpc_id            = aws_vpc.main.id
   cidr_block        = cidrsubnet(var.vpc_cidr, 8, count.index + 10)
-  availability_zone = data.aws_availability_zones.available.names[count.index]
+  availability_zone = local.azs[count.index]
 
-  tags = { Name = "${var.app_name}-private-${data.aws_availability_zones.available.names[count.index]}" }
+  tags = { Name = "${var.project}-private-${local.azs[count.index]}" }
 }
 
 resource "aws_route_table" "public" {
@@ -43,7 +51,7 @@ resource "aws_route_table" "public" {
     gateway_id = aws_internet_gateway.main.id
   }
 
-  tags = { Name = "${var.app_name}-public-rt" }
+  tags = { Name = "${var.project}-public-rt" }
 }
 
 resource "aws_route_table_association" "public" {
@@ -56,7 +64,7 @@ resource "aws_route_table_association" "public" {
 resource "aws_route_table" "private" {
   vpc_id = aws_vpc.main.id
 
-  tags = { Name = "${var.app_name}-private-rt" }
+  tags = { Name = "${var.project}-private-rt" }
 }
 
 resource "aws_route_table_association" "private" {
@@ -68,7 +76,7 @@ resource "aws_route_table_association" "private" {
 # ------------------------------------------------------- security groups ---
 
 resource "aws_security_group" "alb" {
-  name        = "${var.app_name}-alb-sg"
+  name        = "${var.project}-alb-sg"
   description = "Public HTTP access to the Notesy load balancer"
   vpc_id      = aws_vpc.main.id
 
@@ -87,11 +95,11 @@ resource "aws_security_group" "alb" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  tags = { Name = "${var.app_name}-alb-sg" }
+  tags = { Name = "${var.project}-alb-sg" }
 }
 
-resource "aws_security_group" "ecs" {
-  name        = "${var.app_name}-ecs-sg"
+resource "aws_security_group" "app" {
+  name        = "${var.project}-app-sg"
   description = "Notesy tasks: only reachable from the ALB"
   vpc_id      = aws_vpc.main.id
 
@@ -111,11 +119,11 @@ resource "aws_security_group" "ecs" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  tags = { Name = "${var.app_name}-ecs-sg" }
+  tags = { Name = "${var.project}-app-sg" }
 }
 
 resource "aws_security_group" "db" {
-  name        = "${var.app_name}-db-sg"
+  name        = "${var.project}-db-sg"
   description = "Postgres: only reachable from Notesy tasks"
   vpc_id      = aws_vpc.main.id
 
@@ -124,8 +132,8 @@ resource "aws_security_group" "db" {
     from_port       = 5432
     to_port         = 5432
     protocol        = "tcp"
-    security_groups = [aws_security_group.ecs.id]
+    security_groups = [aws_security_group.app.id]
   }
 
-  tags = { Name = "${var.app_name}-db-sg" }
+  tags = { Name = "${var.project}-db-sg" }
 }

@@ -1,15 +1,48 @@
-"""Django settings for notesy."""
+"""Django settings for notesy. All environment-specific config comes from env vars."""
+import json
 import os
+import urllib.request
 from pathlib import Path
+
+import dj_database_url
+from django.core.exceptions import ImproperlyConfigured
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
-SECRET_KEY = "django-insecure-replace-me-eventually-l0lz-h4xx-9000"
+def env_bool(name, default=False):
+    return os.environ.get(name, str(default)).strip().lower() in ("1", "true", "yes", "on")
 
-DEBUG = True
 
-ALLOWED_HOSTS = ["*"]
+def env_list(name, default=""):
+    return [v.strip() for v in os.environ.get(name, default).split(",") if v.strip()]
+
+
+# ---------- Core ----------
+DEBUG = env_bool("DJANGO_DEBUG", False)  # off unless explicitly enabled
+
+SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY")
+if not SECRET_KEY:
+    if DEBUG:
+        SECRET_KEY = "dev-only-insecure-key"
+    else:
+        raise ImproperlyConfigured("DJANGO_SECRET_KEY must be set when DJANGO_DEBUG is off")
+
+ALLOWED_HOSTS = env_list("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1")
+
+# On ECS, ALB health checks use the task's private IP as the Host header.
+# Add that IP from the task metadata endpoint so we never need ALLOWED_HOSTS = ["*"].
+_ecs_metadata = os.environ.get("ECS_CONTAINER_METADATA_URI_V4")
+if _ecs_metadata:
+    try:
+        with urllib.request.urlopen(f"{_ecs_metadata}/task", timeout=2) as resp:
+            for container in json.load(resp).get("Containers", []):
+                for network in container.get("Networks", []):
+                    ALLOWED_HOSTS.extend(network.get("IPv4Addresses", []))
+    except (OSError, ValueError):
+        pass
+
+CSRF_TRUSTED_ORIGINS = env_list("DJANGO_CSRF_TRUSTED_ORIGINS")
 
 
 INSTALLED_APPS = [
@@ -24,6 +57,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -53,17 +87,21 @@ TEMPLATES = [
 WSGI_APPLICATION = "notesy.wsgi.application"
 
 
+# ---------- Database ----------
+# Required outside DEBUG, so a missing DATABASE_URL fails loudly
+# instead of silently falling back to a throwaway SQLite file.
+if not os.environ.get("DATABASE_URL") and not DEBUG:
+    raise ImproperlyConfigured("DATABASE_URL must be set when DJANGO_DEBUG is off")
+
 DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
-    }
+    "default": dj_database_url.config(
+        default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
+        conn_max_age=60,
+    )
 }
 
-
-SESSION_ENGINE = "django.contrib.sessions.backends.file"
-SESSION_FILE_PATH = str(BASE_DIR / ".sessions")
-os.makedirs(SESSION_FILE_PATH, exist_ok=True)
+# Sessions live in the database (Django's default), so they survive restarts
+# and work across multiple ECS tasks.
 
 
 AUTH_PASSWORD_VALIDATORS = [
@@ -77,6 +115,7 @@ USE_I18N = True
 USE_TZ = True
 
 
+# ---------- Static files (served by WhiteNoise) ----------
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_DIRS = [BASE_DIR / "static"]

@@ -1,9 +1,9 @@
 resource "aws_ecs_cluster" "main" {
-  name = "${var.app_name}-cluster"
+  name = "${var.project}-cluster"
 
   setting {
     name  = "containerInsights"
-    value = "enabled"
+    value = "disabled"
   }
 }
 
@@ -18,12 +18,12 @@ resource "aws_ecs_cluster_capacity_providers" "main" {
 }
 
 resource "aws_cloudwatch_log_group" "app" {
-  name              = "/ecs/${var.app_name}"
+  name              = "/ecs/${var.project}"
   retention_in_days = var.log_retention_days
 }
 
 resource "aws_ecs_task_definition" "app" {
-  family                   = var.app_name
+  family                   = var.project
   requires_compatibilities = ["FARGATE"]
   network_mode             = "awsvpc"
   cpu                      = var.task_cpu
@@ -38,12 +38,11 @@ resource "aws_ecs_task_definition" "app" {
 
   container_definitions = jsonencode([{
     # Must match CONTAINER_NAME in .github/workflows/cicd.yaml
-    name      = var.app_name
+    name      = var.project
     image     = "${aws_ecr_repository.app.repository_url}:${var.image_tag}"
     essential = true
-    # Same startup sequence as docker-compose.yaml: migrate, (seed), serve.
+    # The image's entrypoint.sh runs migrations first; then (seed) and serve.
     command = ["sh", "-c", join(" && ", compact([
-      "python manage.py migrate --noinput",
       var.run_seed ? "python manage.py seed" : "",
       "exec gunicorn notesy.wsgi:application --bind 0.0.0.0:${var.container_port} --workers 3 --access-logfile -",
     ]))]
@@ -76,7 +75,7 @@ resource "aws_ecs_task_definition" "app" {
 }
 
 resource "aws_ecs_service" "app" {
-  name            = "${var.app_name}-service"
+  name            = "${var.project}-service"
   cluster         = aws_ecs_cluster.main.id
   task_definition = aws_ecs_task_definition.app.arn
   desired_count   = var.desired_count
@@ -93,20 +92,20 @@ resource "aws_ecs_service" "app" {
 
   network_configuration {
     subnets          = aws_subnet.public[*].id
-    security_groups  = [aws_security_group.ecs.id]
+    security_groups  = [aws_security_group.app.id]
     assign_public_ip = true # pull from ECR without a NAT gateway
   }
 
   load_balancer {
     target_group_arn = aws_lb_target_group.app.arn
-    container_name   = var.app_name
+    container_name   = var.project
     container_port   = var.container_port
   }
 
   # The pipeline registers new task definition revisions (new image tag) and
-  # points the service at them; don't let Terraform roll that back.
+  # scales the service; don't let Terraform roll either back.
   lifecycle {
-    ignore_changes = [task_definition]
+    ignore_changes = [task_definition, desired_count]
   }
 
   depends_on = [aws_lb_listener.http]

@@ -1,0 +1,159 @@
+web-1  | Operations to perform:
+web-1  |   Apply all migrations: admin, auth, contenttypes, notes, sessions
+web-1  | Running migrations:
+web-1  |   Applying contenttypes.0001_initial... OK
+web-1  |   Applying auth.0001_initial... OK
+web-1  |   Applying admin.0001_initial... OK
+web-1  |   Applying admin.0002_logentry_remove_auto_add... OK
+web-1  |   Applying admin.0003_logentry_add_action_flag_choices... OK
+web-1  |   Applying contenttypes.0002_remove_content_type_name... OK
+web-1  |   Applying auth.0002_alter_permission_name_max_length... OK
+web-1  |   Applying auth.0003_alter_user_email_max_length... OK
+web-1  |   Applying auth.0004_alter_user_username_opts... OK
+web-1  |   Applying auth.0005_alter_user_last_login_null... OK
+web-1  |   Applying auth.0006_require_contenttypes_0002... OK
+web-1  |   Applying auth.0007_alter_validators_add_error_messages... OK
+web-1  |   Applying auth.0008_alter_user_username_max_length... OK
+web-1  |   Applying auth.0009_alter_user_last_name_max_length... OK
+web-1  |   Applying auth.0010_alter_group_name_max_length... OK
+web-1  |   Applying auth.0011_update_proxy_permissions... OK
+web-1  |   Applying auth.0012_alter_user_first_name_max_length... OK
+web-1  |   Applying notes.0001_initial... OK
+web-1  |   Applying sessions.0001_initial... OK
+web-1  | Created demo user (demo/demo)
+web-1  | Seeded 3 notes
+web-1  | [2026-09-29 23:33:33 +0000] [1] [INFO] Starting gunicorn 26.2.0
+web-1  | [2026-09-29 23:33:33 +0000] [1] [INFO] Listening at: http://0.0.0.0:8000 (1)
+web-1  | [2026-09-29 23:33:33 +0000] [1] [INFO] Using worker: sync
+web-1  | [2026-09-29 23:33:33 +0000] [9] [INFO] Booting worker with pid: 9
+web-1  | [2026-09-29 23:33:33 +0000] [10] [INFO] Booting worker with pid: 10
+web-1  | [2026-09-29 23:33:33 +0000] [11] [INFO] Booting worker with pid: 11
+web-1  | [2026-09-29 23:33:33 +0000] [1] [INFO] Control socket listening at /home/app/.gunicorn/gunicorn.ctl
+web-1  | [2026-09-29 23:34:14 +0000] [1] [CRITICAL] WORKER TIMEOUT (pid:11)
+web-1  | [2026-09-29 23:34:14 +0000] [11] [ERROR] Error handling request (no URI read)
+web-1  | Traceback (most recent call last):
+web-1  |   File "/usr/local/lib/python3.12/site-packages/gunicorn/workers/sync.py", line 140, in handle
+web-1  |     req = next(parser)
+web-1  |           ^^^^^^^^^^^^
+web-1  |   File "/usr/local/lib/python3.12/site-packages/gunicorn/http/parser.py", line 111, in __next__
+web-1  |     self.mesg = self.mesg_class(self.cfg, self.unreader, self.source_addr, self.req_count)
+web-1  |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+web-1  |   File "/usr/local/lib/python3.12/site-packages/gunicorn/http/message.py", line 506, in __init__
+web-1  |     super().__init__(cfg, unreader, peer_addr)
+web-1  |   File "/usr/local/lib/python3.12/site-packages/gunicorn/http/message.py", line 319, in __init__
+web-1  |     unused = self.parse(self.unreader)
+web-1  |              ^^^^^^^^^^^^^^^^^^^^^^^^^
+web-1  |   File "/usr/local/lib/python3.12/site-packages/gunicorn/http/message.py", line 518, in parse
+web-1  |     self.read_into(unreader, buf, stop=True)
+web-1  |   File "/usr/local/lib/python3.12/site-packages/gunicorn/http/message.py", line 653, in read_into
+web-1  |     data = unreader.read()
+web-1  |            ^^^^^^^^^^^^^^^
+web-1  |   File "/usr/local/lib/python3.12/site-packages/gunicorn/http/unreader.py", line 48, in read
+web-1  |     d = self.chunk()
+web-1  |         ^^^^^^^^^^^^
+web-1  |   File "/usr/local/lib/python3.12/site-packages/gunicorn/http/unreader.py", line 77, in chunk
+web-1  |     return self.sock.recv(self.mxchunk)
+web-1  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+web-1  |   File "/usr/local/lib/python3.12/site-packages/gunicorn/workers/base.py", line 199, in handle_abort
+web-1  |     sys.exit(1)
+web-1  | SystemExit: 1
+web-1  | [2026-09-29 23:34:14 +0000] [11] [INFO] Worker exiting (pid: 11)
+web-1  | [2026-09-29 23:34:14 +0000] [13] [INFO] Booting worker with pid: 13
+web-1  | [2026-09-29 23:34:14 +0000] [1] [INFO] Control socket listening at /home/app/.gunicorn/gunicorn.ctl
+web-1  | [2026-09-29 23:35:50 +0000] [1] [CRITICAL] WORKER TIMEOUT (pid:13)
+web-1  | [2026-09-29 23:35:50 +0000] [13] [ERROR] Error handling request (no URI read)
+web-1  | Traceback (most recent call last):
+web-1  |   File "/usr/local/lib/python3.12/site-packages/gunicorn/workers/sync.py", line 140, in handle
+web-1  |     req = next(parser)
+web-1  |           ^^^^^^^^^^^^
+web-1  |   File "/usr/local/lib/python3.12/site-packages/gunicorn/http/parser.py", line 111, in __next__
+web-1  |     self.mesg = self.mesg_class(self.cfg, self.unreader, self.source_addr, self.req_count)
+web-1  |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+web-1  |   File "/usr/local/lib/python3.12/site-packages/gunicorn/http/message.py", line 506, in __init__
+web-1  |     super().__init__(cfg, unreader, peer_addr)
+web-1  |   File "/usr/local/lib/python3.12/site-packages/gunicorn/http/message.py", line 319, in __init__
+web-1  |     unused = self.parse(self.unreader)
+web-1  |              ^^^^^^^^^^^^^^^^^^^^^^^^^
+web-1  |   File "/usr/local/lib/python3.12/site-packages/gunicorn/http/message.py", line 518, in parse
+web-1  |     self.read_into(unreader, buf, stop=True)
+web-1  |   File "/usr/local/lib/python3.12/site-packages/gunicorn/http/message.py", line 653, in read_into
+web-1  |     data = unreader.read()
+web-1  |            ^^^^^^^^^^^^^^^
+web-1  |   File "/usr/local/lib/python3.12/site-packages/gunicorn/http/unreader.py", line 48, in read
+web-1  |     d = self.chunk()
+web-1  |         ^^^^^^^^^^^^
+web-1  |   File "/usr/local/lib/python3.12/site-packages/gunicorn/http/unreader.py", line 77, in chunk
+web-1  |     return self.sock.recv(self.mxchunk)
+web-1  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+web-1  |   File "/usr/local/lib/python3.12/site-packages/gunicorn/workers/base.py", line 199, in handle_abort
+web-1  |     sys.exit(1)
+web-1  | SystemExit: 1
+web-1  | [2026-09-29 23:35:50 +0000] [13] [INFO] Worker exiting (pid: 13)
+web-1  | [2026-09-29 23:35:50 +0000] [15] [INFO] Booting worker with pid: 15
+web-1  | [2026-09-29 23:35:50 +0000] [1] [INFO] Control socket listening at /home/app/.gunicorn/gunicorn.ctl
+web-1  | [2026-09-29 23:36:53 +0000] [1] [CRITICAL] WORKER TIMEOUT (pid:10)
+web-1  | [2026-09-29 23:36:53 +0000] [10] [ERROR] Error handling request (no URI read)
+web-1  | Traceback (most recent call last):
+web-1  |   File "/usr/local/lib/python3.12/site-packages/gunicorn/workers/sync.py", line 140, in handle
+web-1  |     req = next(parser)
+web-1  |           ^^^^^^^^^^^^
+web-1  |   File "/usr/local/lib/python3.12/site-packages/gunicorn/http/parser.py", line 111, in __next__
+web-1  |     self.mesg = self.mesg_class(self.cfg, self.unreader, self.source_addr, self.req_count)
+web-1  |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+web-1  |   File "/usr/local/lib/python3.12/site-packages/gunicorn/http/message.py", line 506, in __init__
+web-1  |     super().__init__(cfg, unreader, peer_addr)
+web-1  |   File "/usr/local/lib/python3.12/site-packages/gunicorn/http/message.py", line 319, in __init__
+web-1  |     unused = self.parse(self.unreader)
+web-1  |              ^^^^^^^^^^^^^^^^^^^^^^^^^
+web-1  |   File "/usr/local/lib/python3.12/site-packages/gunicorn/http/message.py", line 518, in parse
+web-1  |     self.read_into(unreader, buf, stop=True)
+web-1  |   File "/usr/local/lib/python3.12/site-packages/gunicorn/http/message.py", line 653, in read_into
+web-1  |     data = unreader.read()
+web-1  |            ^^^^^^^^^^^^^^^
+web-1  |   File "/usr/local/lib/python3.12/site-packages/gunicorn/http/unreader.py", line 48, in read
+web-1  |     d = self.chunk()
+web-1  |         ^^^^^^^^^^^^
+web-1  |   File "/usr/local/lib/python3.12/site-packages/gunicorn/http/unreader.py", line 77, in chunk
+web-1  |     return self.sock.recv(self.mxchunk)
+web-1  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+web-1  |   File "/usr/local/lib/python3.12/site-packages/gunicorn/workers/base.py", line 199, in handle_abort
+web-1  |     sys.exit(1)
+web-1  | SystemExit: 1
+web-1  | [2026-09-29 23:36:53 +0000] [10] [INFO] Worker exiting (pid: 10)
+web-1  | [2026-09-29 23:36:54 +0000] [17] [INFO] Booting worker with pid: 17
+web-1  | [2026-09-29 23:36:54 +0000] [1] [INFO] Control socket listening at /home/app/.gunicorn/gunicorn.ctl
+web-1  | [2026-09-30 00:40:41 +0000] [1] [CRITICAL] WORKER TIMEOUT (pid:15)
+web-1  | [2026-09-30 00:40:41 +0000] [15] [ERROR] Error handling request (no URI read)
+web-1  | Traceback (most recent call last):
+web-1  |   File "/usr/local/lib/python3.12/site-packages/gunicorn/workers/sync.py", line 140, in handle
+web-1  |     req = next(parser)
+web-1  |           ^^^^^^^^^^^^
+web-1  |   File "/usr/local/lib/python3.12/site-packages/gunicorn/http/parser.py", line 111, in __next__
+web-1  |     self.mesg = self.mesg_class(self.cfg, self.unreader, self.source_addr, self.req_count)
+web-1  |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+web-1  |   File "/usr/local/lib/python3.12/site-packages/gunicorn/http/message.py", line 506, in __init__
+web-1  |     super().__init__(cfg, unreader, peer_addr)
+web-1  |   File "/usr/local/lib/python3.12/site-packages/gunicorn/http/message.py", line 319, in __init__
+web-1  |     unused = self.parse(self.unreader)
+web-1  |              ^^^^^^^^^^^^^^^^^^^^^^^^^
+web-1  |   File "/usr/local/lib/python3.12/site-packages/gunicorn/http/message.py", line 518, in parse
+web-1  |     self.read_into(unreader, buf, stop=True)
+web-1  |   File "/usr/local/lib/python3.12/site-packages/gunicorn/http/message.py", line 653, in read_into
+web-1  |     data = unreader.read()
+web-1  |            ^^^^^^^^^^^^^^^
+web-1  |   File "/usr/local/lib/python3.12/site-packages/gunicorn/http/unreader.py", line 48, in read
+web-1  |     d = self.chunk()
+web-1  |         ^^^^^^^^^^^^
+web-1  |   File "/usr/local/lib/python3.12/site-packages/gunicorn/http/unreader.py", line 77, in chunk
+web-1  |     return self.sock.recv(self.mxchunk)
+web-1  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+web-1  |   File "/usr/local/lib/python3.12/site-packages/gunicorn/workers/base.py", line 199, in handle_abort
+web-1  |     sys.exit(1)
+web-1  | SystemExit: 1
+web-1  | [2026-09-30 00:40:41 +0000] [15] [INFO] Worker exiting (pid: 15)
+web-1  | [2026-09-30 00:40:41 +0000] [19] [INFO] Booting worker with pid: 19
+web-1  | [2026-09-30 00:40:41 +0000] [1] [INFO] Control socket listening at /home/app/.gunicorn/gunicorn.ctl
+web-1  | [2026-09-30 00:41:12 +0000] [1] [INFO] Handling signal: term
+web-1  | [2026-09-30 00:41:12 +0000] [19] [INFO] Worker exiting (pid: 19)
+web-1  | [2026-09-30 00:41:12 +0000] [9] [INFO] Worker exiting (pid: 9)
+web-1  | [2026-09-30 00:41:12 +0000] [17] [INFO] Worker exiting (pid: 17)

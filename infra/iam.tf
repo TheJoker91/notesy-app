@@ -12,7 +12,7 @@ data "aws_iam_policy_document" "ecs_tasks_assume" {
 }
 
 resource "aws_iam_role" "ecs_execution" {
-  name               = "${var.app_name}-ecs-execution-role"
+  name               = "${var.project}-ecs-execution-role"
   assume_role_policy = data.aws_iam_policy_document.ecs_tasks_assume.json
 }
 
@@ -42,25 +42,17 @@ resource "aws_iam_role_policy" "ecs_execution_secrets" {
 # Identity of the running app. Notesy doesn't call AWS APIs, so it's empty.
 
 resource "aws_iam_role" "ecs_task" {
-  name               = "${var.app_name}-ecs-task-role"
+  name               = "${var.project}-ecs-task-role"
   assume_role_policy = data.aws_iam_policy_document.ecs_tasks_assume.json
 }
 
 # --------------------------------------------- GitHub Actions (OIDC) -------
 # Role the pipeline assumes to push to ECR and deploy to ECS.
 
-resource "aws_iam_openid_connect_provider" "github" {
-  count = var.create_github_oidc_provider ? 1 : 0
-
-  url            = "https://token.actions.githubusercontent.com"
-  client_id_list = ["sts.amazonaws.com"]
-  # AWS no longer validates this for GitHub, but the field is still required.
-  thumbprint_list = ["6938fd4d98bab03faadb97b34396831e3780aea1"]
-}
-
+# The OIDC provider is shared by every repo in the account, so Terraform only
+# looks it up; it never creates or destroys it.
 data "aws_iam_openid_connect_provider" "github" {
-  count = var.create_github_oidc_provider ? 0 : 1
-  url   = "https://token.actions.githubusercontent.com"
+  url = "https://token.actions.githubusercontent.com"
 }
 
 data "aws_iam_policy_document" "github_assume" {
@@ -69,7 +61,7 @@ data "aws_iam_policy_document" "github_assume" {
 
     principals {
       type        = "Federated"
-      identifiers = [var.create_github_oidc_provider ? aws_iam_openid_connect_provider.github[0].arn : data.aws_iam_openid_connect_provider.github[0].arn]
+      identifiers = [data.aws_iam_openid_connect_provider.github.arn]
     }
 
     condition {
@@ -88,7 +80,7 @@ data "aws_iam_policy_document" "github_assume" {
 }
 
 resource "aws_iam_role" "github_deploy" {
-  name               = "${var.app_name}-github-deploy-role"
+  name               = "${var.project}-github-deploy-role"
   assume_role_policy = data.aws_iam_policy_document.github_assume.json
 }
 
@@ -110,13 +102,11 @@ resource "aws_iam_role_policy" "github_deploy" {
         Effect = "Allow"
         Action = [
           "ecr:BatchCheckLayerAvailability",
-          "ecr:BatchGetImage",
-          "ecr:GetDownloadUrlForLayer",
           "ecr:InitiateLayerUpload",
           "ecr:UploadLayerPart",
           "ecr:CompleteLayerUpload",
           "ecr:PutImage",
-          "ecr:DescribeImages",
+          "ecr:BatchGetImage",
         ]
         Resource = aws_ecr_repository.app.arn
       },

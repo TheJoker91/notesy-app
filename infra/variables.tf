@@ -4,16 +4,10 @@ variable "aws_region" {
   default     = "us-east-1"
 }
 
-variable "app_name" {
-  description = "Application name, used as a prefix for every resource."
+variable "project" {
+  description = "Project name, used as a prefix for every resource and as the Project tag."
   type        = string
   default     = "notesy"
-}
-
-variable "environment" {
-  description = "Environment name (tag only)."
-  type        = string
-  default     = "dev"
 }
 
 # ---------------------------------------------------------------- network ---
@@ -51,9 +45,9 @@ variable "task_memory" {
 }
 
 variable "desired_count" {
-  description = "Number of running tasks. Set to 0 until the first image is pushed to ECR."
+  description = "Initial number of running tasks. 0 until the first image is pushed to ECR; Terraform ignores later changes (scale via the pipeline or console)."
   type        = number
-  default     = 1
+  default     = 0
 }
 
 variable "django_allowed_hosts" {
@@ -117,10 +111,4 @@ variable "github_branch" {
   description = "Branch allowed to deploy."
   type        = string
   default     = "main"
-}
-
-variable "create_github_oidc_provider" {
-  description = "Create the GitHub OIDC provider. Set false if it already exists in the account (only one per account is allowed)."
-  type        = bool
-  default     = true
 }

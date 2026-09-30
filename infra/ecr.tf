@@ -1,9 +1,8 @@
 # Image repository the pipeline pushes to (ECR_REPOSITORY GitHub variable).
-# If you already created it with `aws ecr create-repository`, import it:
-#   terraform import aws_ecr_repository.app notesy
+# force_delete lets `terraform destroy` remove it even when it holds images.
 
 resource "aws_ecr_repository" "app" {
-  name                 = var.app_name
+  name                 = var.project
   image_tag_mutability = "MUTABLE" # `latest` is re-pushed on every merge
   force_delete         = true
 

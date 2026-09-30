@@ -11,12 +11,12 @@ resource "random_password" "django_secret_key" {
 }
 
 resource "aws_db_subnet_group" "main" {
-  name       = "${var.app_name}-db-subnets"
+  name       = "${var.project}-db-subnets"
   subnet_ids = aws_subnet.private[*].id
 }
 
 resource "aws_db_instance" "main" {
-  identifier     = "${var.app_name}-db"
+  identifier     = "${var.project}-db"
   engine         = "postgres"
   engine_version = "16"
   instance_class = var.db_instance_class
@@ -37,13 +37,13 @@ resource "aws_db_instance" "main" {
   backup_retention_period   = 7
   deletion_protection       = var.db_deletion_protection
   skip_final_snapshot       = !var.db_deletion_protection
-  final_snapshot_identifier = var.db_deletion_protection ? "${var.app_name}-db-final" : null
+  final_snapshot_identifier = var.db_deletion_protection ? "${var.project}-db-final" : null
 }
 
 # ----------------------------------------------------------- app secrets ---
 
 resource "aws_secretsmanager_secret" "database_url" {
-  name                    = "${var.app_name}/DATABASE_URL"
+  name                    = "${var.project}/DATABASE_URL"
   recovery_window_in_days = 0
 }
 
@@ -53,7 +53,7 @@ resource "aws_secretsmanager_secret_version" "database_url" {
 }
 
 resource "aws_secretsmanager_secret" "django_secret_key" {
-  name                    = "${var.app_name}/DJANGO_SECRET_KEY"
+  name                    = "${var.project}/DJANGO_SECRET_KEY"
   recovery_window_in_days = 0
 }
 

@@ -4,7 +4,7 @@ terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "~> 5.0"
+      version = "~> 6.0"
     }
     random = {
       source  = "hashicorp/random"
@@ -28,15 +28,8 @@ provider "aws" {
 
   default_tags {
     tags = {
-      Project     = var.app_name
-      Environment = var.environment
-      ManagedBy   = "terraform"
+      Project   = var.project
+      ManagedBy = "terraform"
     }
   }
-}
-
-data "aws_caller_identity" "current" {}
-
-data "aws_availability_zones" "available" {
-  state = "available"
 }

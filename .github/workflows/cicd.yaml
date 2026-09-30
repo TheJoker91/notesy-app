@@ -54,6 +54,11 @@ jobs:
     name: Build
     needs: gitleaks
     runs-on: ubuntu-latest
+    env:
+      # Settings refuse to load without these when DEBUG is off.
+      # `manage.py check` never queries the DB, so a throwaway SQLite path is enough.
+      DJANGO_SECRET_KEY: ci-only-not-secret
+      DATABASE_URL: sqlite:////tmp/check.sqlite3
     steps:
       - name: Checkout code
         uses: actions/checkout@v4

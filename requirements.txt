@@ -1,7 +1,9 @@
 django
 gunicorn
 psycopg2-binary
-requests==2.20.0
+requests>=2.32
 python-dotenv
 pytest
 pytest-django
+dj-database-url>=2.1
+whitenoise>=6.6
