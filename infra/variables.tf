@@ -10,6 +10,17 @@ variable "project" {
   default     = "notesy"
 }
 
+variable "deploy_target" {
+  description = "Where the app runs: \"ecs\" (Fargate behind an ALB) or \"eks\" (managed node group)."
+  type        = string
+  default     = "eks"
+
+  validation {
+    condition     = contains(["ecs", "eks"], var.deploy_target)
+    error_message = "deploy_target must be \"ecs\" or \"eks\"."
+  }
+}
+
 # ---------------------------------------------------------------- network ---
 
 variable "vpc_cidr" {
@@ -62,6 +73,14 @@ variable "log_retention_days" {
   default     = 14
 }
 
+# ------------------------------------------------------------------- eks ----
+
+variable "eks_version" {
+  description = "Kubernetes version for the EKS cluster (newest in standard support as of 2026-10; see `aws eks describe-cluster-versions`)."
+  type        = string
+  default     = "1.37"
+}
+
 # -------------------------------------------------------------- database ----
 
 variable "db_name" {
@@ -79,7 +98,7 @@ variable "db_username" {
 variable "db_instance_class" {
   description = "RDS instance class."
   type        = string
-  default     = "db.t4g.micro"
+  default     = "db.t3.micro"
 }
 
 variable "db_allocated_storage" {

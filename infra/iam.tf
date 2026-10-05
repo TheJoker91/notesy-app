@@ -47,7 +47,7 @@ resource "aws_iam_role" "ecs_task" {
 }
 
 # --------------------------------------------- GitHub Actions (OIDC) -------
-# Role the pipeline assumes to push to ECR and deploy to ECS.
+# Role the pipeline assumes to push to ECR and deploy to ECS or EKS.
 
 # The OIDC provider is shared by every repo in the account, so Terraform only
 # looks it up; it never creates or destroys it.
@@ -84,59 +84,82 @@ resource "aws_iam_role" "github_deploy" {
   assume_role_policy = data.aws_iam_policy_document.github_assume.json
 }
 
-resource "aws_iam_role_policy" "github_deploy" {
-  name = "ecr-push-ecs-deploy"
-  role = aws_iam_role.github_deploy.id
+data "aws_iam_policy_document" "github_deploy" {
+  statement {
+    sid       = "EcrAuth"
+    actions   = ["ecr:GetAuthorizationToken"]
+    resources = ["*"]
+  }
 
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Sid      = "EcrAuth"
-        Effect   = "Allow"
-        Action   = ["ecr:GetAuthorizationToken"]
-        Resource = "*"
-      },
-      {
-        Sid    = "EcrPush"
-        Effect = "Allow"
-        Action = [
-          "ecr:BatchCheckLayerAvailability",
-          "ecr:InitiateLayerUpload",
-          "ecr:UploadLayerPart",
-          "ecr:CompleteLayerUpload",
-          "ecr:PutImage",
-          "ecr:BatchGetImage",
-        ]
-        Resource = aws_ecr_repository.app.arn
-      },
-      {
-        Sid    = "EcsTaskDefinition"
-        Effect = "Allow"
-        Action = [
-          "ecs:DescribeTaskDefinition",
-          "ecs:RegisterTaskDefinition",
-        ]
-        Resource = "*" # these actions don't support resource-level permissions
-      },
-      {
-        Sid    = "EcsDeploy"
-        Effect = "Allow"
-        Action = [
-          "ecs:UpdateService",
-          "ecs:DescribeServices",
-        ]
-        Resource = aws_ecs_service.app.id
-      },
-      {
-        Sid      = "PassTaskRoles"
-        Effect   = "Allow"
-        Action   = ["iam:PassRole"]
-        Resource = [aws_iam_role.ecs_execution.arn, aws_iam_role.ecs_task.arn]
-        Condition = {
-          StringEquals = { "iam:PassedToService" = "ecs-tasks.amazonaws.com" }
-        }
-      },
+  statement {
+    sid = "EcrPush"
+    actions = [
+      "ecr:BatchCheckLayerAvailability",
+      "ecr:InitiateLayerUpload",
+      "ecr:UploadLayerPart",
+      "ecr:CompleteLayerUpload",
+      "ecr:PutImage",
+      "ecr:BatchGetImage",
     ]
-  })
+    resources = [aws_ecr_repository.app.arn]
+  }
+
+  # ------------------------------------------------- ECS only ---
+
+  dynamic "statement" {
+    for_each = aws_ecs_service.app
+    content {
+      sid = "EcsTaskDefinition"
+      actions = [
+        "ecs:DescribeTaskDefinition",
+        "ecs:RegisterTaskDefinition",
+      ]
+      resources = ["*"] # these actions don't support resource-level permissions
+    }
+  }
+
+  dynamic "statement" {
+    for_each = aws_ecs_service.app
+    content {
+      sid = "EcsDeploy"
+      actions = [
+        "ecs:UpdateService",
+        "ecs:DescribeServices",
+      ]
+      resources = [statement.value.id]
+    }
+  }
+
+  dynamic "statement" {
+    for_each = aws_ecs_service.app
+    content {
+      sid       = "PassTaskRoles"
+      actions   = ["iam:PassRole"]
+      resources = [aws_iam_role.ecs_execution.arn, aws_iam_role.ecs_task.arn]
+      condition {
+        test     = "StringEquals"
+        variable = "iam:PassedToService"
+        values   = ["ecs-tasks.amazonaws.com"]
+      }
+    }
+  }
+
+  # ------------------------------------------------- EKS only ---
+  # `aws eks update-kubeconfig` needs DescribeCluster; in-cluster rights come
+  # from the EKS access entry (eks.tf), not IAM.
+
+  dynamic "statement" {
+    for_each = aws_eks_cluster.main
+    content {
+      sid       = "EksDescribe"
+      actions   = ["eks:DescribeCluster"]
+      resources = [statement.value.arn]
+    }
+  }
+}
+
+resource "aws_iam_role_policy" "github_deploy" {
+  name   = "ecr-push-${var.deploy_target}-deploy"
+  role   = aws_iam_role.github_deploy.id
+  policy = data.aws_iam_policy_document.github_deploy.json
 }

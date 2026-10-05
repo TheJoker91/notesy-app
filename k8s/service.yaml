@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: notesy
+  namespace: notesy
+spec:
+  type: LoadBalancer
+  selector:
+    app: notesy
+  ports:
+    - port: 80
+      targetPort: 8000
+      protocol: TCP

@@ -1,0 +1,157 @@
+random_password.django_secret_key: Refreshing state... [id=none]
+random_password.db: Refreshing state... [id=none]
+data.aws_iam_policy_document.eks_cluster_assume: Reading...
+data.aws_availability_zones.available: Reading...
+data.aws_iam_policy_document.ecs_tasks_assume: Reading...
+data.aws_iam_policy_document.eks_nodes_assume: Reading...
+data.aws_iam_openid_connect_provider.github: Reading...
+aws_secretsmanager_secret.database_url: Refreshing state... [id=arn:aws:secretsmanager:us-east-1:686831565701:secret:notesy/DATABASE_URL-x7fz7l]
+aws_secretsmanager_secret.django_secret_key: Refreshing state... [id=arn:aws:secretsmanager:us-east-1:686831565701:secret:notesy/DJANGO_SECRET_KEY-d3JD3h]
+aws_vpc.main: Refreshing state... [id=vpc-0feb78ef128848ae6]
+aws_ecr_repository.app: Refreshing state... [id=notesy]
+data.aws_iam_policy_document.eks_nodes_assume: Read complete after 0s [id=2851119427]
+data.aws_iam_policy_document.eks_cluster_assume: Read complete after 0s [id=1029077455]
+data.aws_iam_policy_document.ecs_tasks_assume: Read complete after 0s [id=1077804475]
+aws_iam_role.ecs_execution: Refreshing state... [id=notesy-ecs-execution-role]
+aws_iam_role.eks_nodes[0]: Refreshing state... [id=notesy-eks-node-role]
+aws_iam_role.eks_cluster[0]: Refreshing state... [id=notesy-eks-cluster-role]
+aws_iam_role.ecs_task: Refreshing state... [id=notesy-ecs-task-role]
+aws_secretsmanager_secret_version.django_secret_key: Refreshing state... [id=arn:aws:secretsmanager:us-east-1:686831565701:secret:notesy/DJANGO_SECRET_KEY-d3JD3h|terraform-A4Zto29vZf6jP82CyvVhrgnSTb]
+data.aws_availability_zones.available: Read complete after 1s [id=us-east-1]
+data.aws_iam_openid_connect_provider.github: Read complete after 1s [id=arn:aws:iam::686831565701:oidc-provider/token.actions.githubusercontent.com]
+data.aws_iam_policy_document.github_assume: Reading...
+data.aws_iam_policy_document.github_assume: Read complete after 0s [id=810963472]
+aws_iam_role.github_deploy: Refreshing state... [id=notesy-github-deploy-role]
+aws_ecr_lifecycle_policy.app: Refreshing state... [id=notesy]
+aws_iam_role_policy_attachment.eks_cluster[0]: Refreshing state... [id=notesy-eks-cluster-role/arn:aws:iam::aws:policy/AmazonEKSClusterPolicy]
+aws_iam_role_policy_attachment.eks_nodes["arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"]: Refreshing state... [id=notesy-eks-node-role/arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly]
+aws_iam_role_policy_attachment.eks_nodes["arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy"]: Refreshing state... [id=notesy-eks-node-role/arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy]
+aws_iam_role_policy_attachment.eks_nodes["arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"]: Refreshing state... [id=notesy-eks-node-role/arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy]
+aws_iam_role_policy_attachment.ecs_execution: Refreshing state... [id=notesy-ecs-execution-role/arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy]
+aws_iam_role_policy.ecs_execution_secrets: Refreshing state... [id=notesy-ecs-execution-role:read-app-secrets]
+aws_route_table.private: Refreshing state... [id=rtb-039671a2153f2a507]
+aws_internet_gateway.main: Refreshing state... [id=igw-05216cfb5c505bfee]
+aws_security_group.db: Refreshing state... [id=sg-085e32cff82def046]
+aws_subnet.private[1]: Refreshing state... [id=subnet-00fad7dcff015287b]
+aws_subnet.private[0]: Refreshing state... [id=subnet-0de716504be7aa8cb]
+aws_subnet.public[1]: Refreshing state... [id=subnet-0d1320cb7ae86473d]
+aws_subnet.public[0]: Refreshing state... [id=subnet-0d2fca4144e440bf6]
+aws_route_table.public: Refreshing state... [id=rtb-01c0e885b05ecd250]
+aws_route_table_association.private[1]: Refreshing state... [id=rtbassoc-0fb569fbfed7677fd]
+aws_db_subnet_group.main: Refreshing state... [id=notesy-db-subnets]
+aws_route_table_association.private[0]: Refreshing state... [id=rtbassoc-09cc66f1396650f51]
+aws_eks_cluster.main[0]: Refreshing state... [id=notesy-eks]
+aws_route_table_association.public[0]: Refreshing state... [id=rtbassoc-0b83e4891c449f420]
+aws_route_table_association.public[1]: Refreshing state... [id=rtbassoc-0b3d8680067c3cdcb]
+aws_eks_access_entry.github_deploy[0]: Refreshing state... [id=notesy-eks:arn:aws:iam::686831565701:role/notesy-github-deploy-role]
+data.aws_iam_policy_document.github_deploy: Reading...
+aws_vpc_security_group_ingress_rule.db_from_eks[0]: Refreshing state... [id=sgr-0518620aab53c01e7]
+aws_eks_node_group.main[0]: Refreshing state... [id=notesy-eks:notesy-nodes]
+data.aws_iam_policy_document.github_deploy: Read complete after 0s [id=3766099364]
+aws_iam_role_policy.github_deploy: Refreshing state... [id=notesy-github-deploy-role:ecr-push-eks-deploy]
+aws_eks_access_policy_association.github_deploy[0]: Refreshing state... [id=notesy-eks#arn:aws:iam::686831565701:role/notesy-github-deploy-role#arn:aws:eks::aws:cluster-access-policy/AmazonEKSEditPolicy]
+
+Terraform used the selected providers to generate the following execution
+plan. Resource actions are indicated with the following symbols:
+  + create
+
+Terraform will perform the following actions:
+
+  # aws_db_instance.main will be created
+  + resource "aws_db_instance" "main" {
+      + address                               = (known after apply)
+      + allocated_storage                     = 20
+      + apply_immediately                     = false
+      + arn                                   = (known after apply)
+      + auto_minor_version_upgrade            = true
+      + availability_zone                     = (known after apply)
+      + backup_retention_period               = 7
+      + backup_target                         = (known after apply)
+      + backup_window                         = (known after apply)
+      + ca_cert_identifier                    = (known after apply)
+      + character_set_name                    = (known after apply)
+      + copy_tags_to_snapshot                 = false
+      + database_insights_mode                = (known after apply)
+      + db_name                               = "notesy"
+      + db_subnet_group_name                  = "notesy-db-subnets"
+      + dedicated_log_volume                  = false
+      + delete_automated_backups              = true
+      + deletion_protection                   = false
+      + domain_fqdn                           = (known after apply)
+      + endpoint                              = (known after apply)
+      + engine                                = "postgres"
+      + engine_lifecycle_support              = (known after apply)
+      + engine_version                        = "16"
+      + engine_version_actual                 = (known after apply)
+      + hosted_zone_id                        = (known after apply)
+      + id                                    = (known after apply)
+      + identifier                            = "notesy-db"
+      + identifier_prefix                     = (known after apply)
+      + instance_class                        = "db.t3.micro"
+      + iops                                  = (known after apply)
+      + kms_key_id                            = (known after apply)
+      + latest_restorable_time                = (known after apply)
+      + license_model                         = (known after apply)
+      + listener_endpoint                     = (known after apply)
+      + maintenance_window                    = (known after apply)
+      + master_user_secret                    = (known after apply)
+      + master_user_secret_kms_key_id         = (known after apply)
+      + monitoring_interval                   = 0
+      + monitoring_role_arn                   = (known after apply)
+      + multi_az                              = false
+      + nchar_character_set_name              = (known after apply)
+      + network_type                          = (known after apply)
+      + option_group_name                     = (known after apply)
+      + parameter_group_name                  = (known after apply)
+      + password                              = (sensitive value)
+      + password_wo                           = (write-only attribute)
+      + performance_insights_enabled          = false
+      + performance_insights_kms_key_id       = (known after apply)
+      + performance_insights_retention_period = (known after apply)
+      + port                                  = (known after apply)
+      + publicly_accessible                   = false
+      + region                                = "us-east-1"
+      + replica_mode                          = (known after apply)
+      + replicas                              = (known after apply)
+      + resource_id                           = (known after apply)
+      + skip_final_snapshot                   = true
+      + snapshot_identifier                   = (known after apply)
+      + status                                = (known after apply)
+      + storage_encrypted                     = true
+      + storage_throughput                    = (known after apply)
+      + storage_type                          = "gp3"
+      + tags_all                              = {
+          + "ManagedBy" = "terraform"
+          + "Project"   = "notesy"
+        }
+      + timezone                              = (known after apply)
+      + upgrade_rollout_order                 = (known after apply)
+      + username                              = "notesy"
+      + vpc_security_group_ids                = [
+          + "sg-085e32cff82def046",
+        ]
+    }
+
+  # aws_secretsmanager_secret_version.database_url will be created
+  + resource "aws_secretsmanager_secret_version" "database_url" {
+      + arn                  = (known after apply)
+      + has_secret_string_wo = (known after apply)
+      + id                   = (known after apply)
+      + region               = "us-east-1"
+      + secret_arn           = (known after apply)
+      + secret_id            = "arn:aws:secretsmanager:us-east-1:686831565701:secret:notesy/DATABASE_URL-x7fz7l"
+      + secret_string        = (sensitive value)
+      + secret_string_wo     = (write-only attribute)
+      + version_id           = (known after apply)
+      + version_stages       = (known after apply)
+    }
+
+Plan: 2 to add, 0 to change, 0 to destroy.
+
+Changes to Outputs:
+  + rds_endpoint               = (known after apply)
+
+─────────────────────────────────────────────────────────────────────────────
+
+Note: You didn't use the -out option to save this plan, so Terraform can't
+guarantee to take exactly these actions if you run "terraform apply" now.
