@@ -1,4 +1,6 @@
 resource "aws_ecs_cluster" "main" {
+  count = var.deploy_target == "ecs" ? 1 : 0
+
   name = "${var.project}-cluster"
 
   setting {
@@ -8,7 +10,9 @@ resource "aws_ecs_cluster" "main" {
 }
 
 resource "aws_ecs_cluster_capacity_providers" "main" {
-  cluster_name       = aws_ecs_cluster.main.name
+  count = var.deploy_target == "ecs" ? 1 : 0
+
+  cluster_name       = aws_ecs_cluster.main[0].name
   capacity_providers = ["FARGATE", "FARGATE_SPOT"]
 
   default_capacity_provider_strategy {
@@ -18,11 +22,15 @@ resource "aws_ecs_cluster_capacity_providers" "main" {
 }
 
 resource "aws_cloudwatch_log_group" "app" {
+  count = var.deploy_target == "ecs" ? 1 : 0
+
   name              = "/ecs/${var.project}"
   retention_in_days = var.log_retention_days
 }
 
 resource "aws_ecs_task_definition" "app" {
+  count = var.deploy_target == "ecs" ? 1 : 0
+
   family                   = var.project
   requires_compatibilities = ["FARGATE"]
   network_mode             = "awsvpc"
@@ -54,8 +62,8 @@ resource "aws_ecs_task_definition" "app" {
 
     environment = [
       { name = "DJANGO_DEBUG", value = "False" },
-      { name = "DJANGO_ALLOWED_HOSTS", value = aws_lb.main.dns_name },
-      { name = "DJANGO_CSRF_TRUSTED_ORIGINS", value = "http://${aws_lb.main.dns_name}" },
+      { name = "DJANGO_ALLOWED_HOSTS", value = aws_lb.main[0].dns_name },
+      { name = "DJANGO_CSRF_TRUSTED_ORIGINS", value = "http://${aws_lb.main[0].dns_name}" },
     ]
 
     secrets = [
@@ -66,7 +74,7 @@ resource "aws_ecs_task_definition" "app" {
     logConfiguration = {
       logDriver = "awslogs"
       options = {
-        awslogs-group         = aws_cloudwatch_log_group.app.name
+        awslogs-group         = aws_cloudwatch_log_group.app[0].name
         awslogs-region        = var.aws_region
         awslogs-stream-prefix = "ecs"
       }
@@ -75,9 +83,11 @@ resource "aws_ecs_task_definition" "app" {
 }
 
 resource "aws_ecs_service" "app" {
+  count = var.deploy_target == "ecs" ? 1 : 0
+
   name            = "${var.project}-service"
-  cluster         = aws_ecs_cluster.main.id
-  task_definition = aws_ecs_task_definition.app.arn
+  cluster         = aws_ecs_cluster.main[0].id
+  task_definition = aws_ecs_task_definition.app[0].arn
   desired_count   = var.desired_count
   launch_type     = "FARGATE"
 
@@ -92,12 +102,12 @@ resource "aws_ecs_service" "app" {
 
   network_configuration {
     subnets          = aws_subnet.public[*].id
-    security_groups  = [aws_security_group.app.id]
+    security_groups  = [aws_security_group.app[0].id]
     assign_public_ip = true # pull from ECR without a NAT gateway
   }
 
   load_balancer {
-    target_group_arn = aws_lb_target_group.app.arn
+    target_group_arn = aws_lb_target_group.app[0].arn
     container_name   = var.project
     container_port   = var.container_port
   }

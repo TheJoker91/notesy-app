@@ -1,6 +1,6 @@
-# VPC with two public subnets (ALB + Fargate tasks) and two private subnets
-# (RDS). Tasks get public IPs so they can pull from ECR without a NAT gateway;
-# their security group only accepts traffic from the ALB.
+# VPC with two public subnets (ALB + Fargate tasks on ECS, or the EKS nodes)
+# and two private subnets (RDS). Workloads get public IPs so they can pull
+# from ECR without a NAT gateway.
 
 data "aws_availability_zones" "available" {
   state = "available"
@@ -31,7 +31,11 @@ resource "aws_subnet" "public" {
   availability_zone       = local.azs[count.index]
   map_public_ip_on_launch = true
 
-  tags = { Name = "${var.project}-public-${local.azs[count.index]}" }
+  tags = {
+    Name = "${var.project}-public-${local.azs[count.index]}"
+    # Lets a Kubernetes Service of type LoadBalancer place its LB here.
+    "kubernetes.io/role/elb" = "1"
+  }
 }
 
 resource "aws_subnet" "private" {
@@ -76,6 +80,7 @@ resource "aws_route_table_association" "private" {
 # ------------------------------------------------------- security groups ---
 
 resource "aws_security_group" "alb" {
+  count       = var.deploy_target == "ecs" ? 1 : 0
   name        = "${var.project}-alb-sg"
   description = "Public HTTP access to the Notesy load balancer"
   vpc_id      = aws_vpc.main.id
@@ -99,6 +104,7 @@ resource "aws_security_group" "alb" {
 }
 
 resource "aws_security_group" "app" {
+  count       = var.deploy_target == "ecs" ? 1 : 0
   name        = "${var.project}-app-sg"
   description = "Notesy tasks: only reachable from the ALB"
   vpc_id      = aws_vpc.main.id
@@ -108,7 +114,7 @@ resource "aws_security_group" "app" {
     from_port       = var.container_port
     to_port         = var.container_port
     protocol        = "tcp"
-    security_groups = [aws_security_group.alb.id]
+    security_groups = [aws_security_group.alb[0].id]
   }
 
   egress {
@@ -127,13 +133,29 @@ resource "aws_security_group" "db" {
   description = "Postgres: only reachable from Notesy tasks"
   vpc_id      = aws_vpc.main.id
 
-  ingress {
-    description     = "Postgres from ECS tasks"
-    from_port       = 5432
-    to_port         = 5432
-    protocol        = "tcp"
-    security_groups = [aws_security_group.app.id]
-  }
-
   tags = { Name = "${var.project}-db-sg" }
+}
+
+# Ingress lives in standalone rules so each can follow the deploy target.
+
+resource "aws_vpc_security_group_ingress_rule" "db_from_app" {
+  count                        = var.deploy_target == "ecs" ? 1 : 0
+  security_group_id            = aws_security_group.db.id
+  description                  = "Postgres from ECS tasks"
+  ip_protocol                  = "tcp"
+  from_port                    = 5432
+  to_port                      = 5432
+  referenced_security_group_id = aws_security_group.app[0].id
+}
+
+# Managed node groups (no custom launch template) attach the cluster security
+# group to nodes, and VPC CNI pods share the node's ENI security groups.
+resource "aws_vpc_security_group_ingress_rule" "db_from_eks" {
+  count                        = var.deploy_target == "eks" ? 1 : 0
+  security_group_id            = aws_security_group.db.id
+  description                  = "Postgres from EKS pods"
+  ip_protocol                  = "tcp"
+  from_port                    = 5432
+  to_port                      = 5432
+  referenced_security_group_id = aws_eks_cluster.main[0].vpc_config[0].cluster_security_group_id
 }

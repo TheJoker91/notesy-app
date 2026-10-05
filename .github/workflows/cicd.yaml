@@ -19,6 +19,7 @@ env:
   ECR_REPOSITORY: ${{ vars.ECR_REPOSITORY }}
   ECS_CLUSTER: ${{ vars.ECS_CLUSTER }}
   ECS_SERVICE: ${{ vars.ECS_SERVICE }}
+  EKS_CLUSTER: ${{ vars.EKS_CLUSTER }}
 
   # JFrog
   JFROG_URL: ${{ vars.JFROG_URL }}
@@ -267,7 +268,7 @@ jobs:
   deploy-ecs:
     name: Deploy to ECS
     needs: [publish-ecr, publish-jfrog]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.DEPLOY_TARGET == 'ecs'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -310,3 +311,47 @@ jobs:
             --cluster ${{ env.ECS_CLUSTER }} \
             --service ${{ env.ECS_SERVICE }}
           echo "Service is stable on ${{ github.sha }}"
+
+  deploy-eks:
+    name: Deploy to EKS
+    needs: [publish-ecr, publish-jfrog]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.DEPLOY_TARGET == 'eks'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ECR_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Connect kubectl to the cluster
+        run: aws eks update-kubeconfig --region ${{ env.AWS_REGION }} --name ${{ env.EKS_CLUSTER }}
+
+      - name: Apply config and service
+        run: |
+          kubectl apply -f k8s/configmap.yaml
+          kubectl apply -f k8s/service.yaml
+
+      - name: Deploy this commit's image
+        id: deploy
+        run: |
+          REGISTRY=$(aws sts get-caller-identity --query Account --output text).dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com
+          IMAGE=$REGISTRY/${{ env.ECR_REPOSITORY }}:${{ github.sha }}
+          echo "Deploying image: $IMAGE"
+          sed "s|__IMAGE__|$IMAGE|" k8s/deployment.yaml | kubectl apply -f -
+          kubectl rollout status deployment/notesy -n notesy --timeout=5m
+
+      - name: Roll back on failed rollout
+        if: failure() && steps.deploy.outcome == 'failure'
+        run: kubectl rollout undo deployment/notesy -n notesy
+
+      - name: Show what's running
+        run: |
+          kubectl get deployment notesy -n notesy -o jsonpath='{.spec.template.spec.containers[0].image}{"\n"}'
+          kubectl get svc notesy -n notesy
