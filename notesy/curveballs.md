@@ -1,6 +1,6 @@
 # Curveballs
 
-Everything that broke (or nearly broke) while taking Notesy from "runs on a laptop" to "running on ECS", in the order it happened. Each entry is written the way I'd tell it in a walkthrough: what I saw, how I found the cause, what I changed, and what I took from it.
+Everything that broke (or nearly broke) while taking Notesy from "runs on a laptop" to "running on ECS, then EKS", in the order it happened. Each entry is written the way I'd tell it in a walkthrough: what I saw, how I found the cause, what I changed, and what I took from it.
 
 ---
 
@@ -149,6 +149,55 @@ Everything that broke (or nearly broke) while taking Notesy from "runs on a lapt
 
 ---
 
+## EKS session
+
+### 16. JFrog came back empty
+
+- **Symptom:** After recreating the lab server, the repository, the `ci-notesy` user, the permission and the token were all gone.
+- **Diagnosis:** The server had been destroyed, not stopped, so JFrog was a fresh install.
+- **Fix:** Recreated the Generic repo, user, permission and token. This time **Delete/Overwrite** went on the permission from the start (see #13), and I tested an upload *and* an overwrite before touching the pipeline.
+- **Takeaway:** "Destroy" and "stop" are different operational choices. Self-hosted tools carry their configuration on their disk, so anything you want to survive a teardown needs to be scripted or backed up.
+
+### 17. `401` from JFrog with a valid token
+
+- **Symptom:** The test upload returned `401`, twice.
+- **Diagnosis:** `echo ${#JFROG_TOKEN}` printed `0`: the variable was empty. On the first attempt, `read -s` had been pasted together with the next commands, so it captured the `echo` line as the "token". Then a new terminal window was used, and shell variables don't carry over between windows.
+- **Fix:** Ran `read -s` on its own, in the same terminal as the upload, and checked the length before using it (735 characters).
+- **Takeaway:** For an auth failure, check that the credential is actually present before debugging the server. `${#VAR}` checks it without revealing it.
+
+### 18. RDS: `InsufficientDBInstanceCapacity`
+
+- **Symptom:** `terraform apply` failed creating the database: AWS had no `db.t4g.micro` capacity in the subnet group's availability zones.
+- **Diagnosis:** An AWS-side capacity shortage, not a config error. Terraform kept creating everything else (EKS took ~12 minutes) and saved it all to state before exiting.
+- **Fix:** Changed the `db_instance_class` **default** to `db.t3.micro` (an x86 instance in a separate capacity pool) rather than passing `-var` once, so later applies don't try to replace the database. The follow-up plan was **2 to add, 0 to change**: only the database and the `DATABASE_URL` secret version that depends on it.
+- **Takeaway:** Partial applies are recoverable. Read the next plan carefully, and make sure it only creates what's missing.
+
+### 19. Kubernetes probes vs `ALLOWED_HOSTS`
+
+- **Symptom:** Prevented rather than hit. It's the same problem as #8, in a new form.
+- **Diagnosis:** The kubelet's HTTP probes send the **pod IP** as the `Host` header, so Django would answer `400` and Kubernetes would restart a healthy pod forever. Separately, the Service's load balancer hostname doesn't exist until the Service is created, so it can't be put in `ALLOWED_HOSTS` ahead of time.
+- **Fix:** The probes send `Host: localhost` (set in the manifest, so no code change), and `DJANGO_ALLOWED_HOSTS` is `.us-east-1.elb.amazonaws.com,localhost`. The leading dot matches whatever hostname AWS assigns, without falling back to `*`.
+- **Takeaway:** On ECS this was solved in code (reading the task IP); on Kubernetes the probe spec could solve it directly. Same root cause, platform-appropriate fix.
+
+### 20. `Startup probe failed: connection refused` on first deploy
+
+- **Symptom:** A warning event one second after the container started.
+- **Diagnosis:** Expected. The entrypoint was running migrations against a fresh RDS, so gunicorn wasn't listening yet.
+- **Fix:** None needed. The **startup probe** (5 s × 30 attempts) gives the pod up to ~150 s before Kubernetes judges it. It passed seconds later with `200`s, and the liveness probe never got a chance to kill it.
+- **Takeaway:** A startup probe exists so that slow boots don't look like crashes.
+
+### 21. `Deploy to ECS` failed after switching to EKS
+
+- **Symptom:** The first pipeline run of the session went red at Deploy to ECS.
+- **Diagnosis:** Terraform no longer created the ECS service (`deploy_target = "eks"`), but the job had no idea.
+- **Fix:** A `DEPLOY_TARGET` GitHub variable gates both deploy jobs (`== 'ecs'` / `== 'eks'`), mirroring the Terraform variable.
+- **Takeaway:** If the variable is missing, it reads as empty, *both* deploys skip, and the run still looks green. The pipeline's target and the infrastructure's target must be kept in step.
+
+---
+
 ## Verification that closed Milestone 4
 
-The commit on `main`, the image tag in ECR, and the image in the running task definition were all `6d0ffa5267beb363d843dc9ae00185c01efac681`. The exact build the pipeline published is the one serving traffic.
+- **ECS:** the commit on `main`, the image tag in ECR, and the image in the running task definition were all `6d0ffa5267beb363d843dc9ae00185c01efac681`.
+- **EKS:** the first manual deploy ran `6d0ffa5…` from the new ECR repository. Merging the EKS pull request then rolled the merge commit's SHA onto the cluster through the pipeline, and `kubectl get deployment notesy -o jsonpath=…image` matched `git log -1 origin/main`.
+
+In both cases, the exact build the pipeline published is the one serving traffic.
